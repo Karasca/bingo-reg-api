@@ -43,7 +43,7 @@ router.post('/', function (req, res) {
         newReg.access_token = undefined
         registrations.push(newReg);
         res.json(registrations)
-        return sendEventsToAll(newReg);
+        return sendEventsToAll(registrations);
     }
     else{
         res.status(403).send;
