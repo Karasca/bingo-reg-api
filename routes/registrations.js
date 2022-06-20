@@ -15,9 +15,21 @@ router.get('/', function(req, res) {
 
     res.writeHead(200, headers);
 
-    const data = `data: ${JSON.stringify(registrations)}\n\n`;
+    // write whole registration array to listener
+    res.write(`event: message\n`);
+    res.write(`data: ${JSON.stringify(registrations)}\n\n`);
 
-    res.write(data)
+    // write bingo status to listener
+    if(open){
+        res.write(`event: open-bingo\n`)
+        res.write(`data: bingo opened\n\n`)
+    }else{
+        res.write(`event: close-bingo\n`)
+        res.write(`data: bingo closed\n\n`)
+    }
+    //console.log(data);
+
+    // res.write(data)
 
     const clientId = Date.now();
 
@@ -53,7 +65,7 @@ router.post('/', function (req, res) {
 function sendClearEventToAll() {
     clients.forEach(client => {
             client.response.write(`event: clear\n`);
-            client.response.write(`data: "registrations cleared"\n\n`)
+            client.response.write(`data: registrations cleared\n\n`)
         }
     )
 }
@@ -73,7 +85,7 @@ router.post('/clear', function(req, res) {
 function sendOpenEventToAll() {
     clients.forEach(client => {
             client.response.write(`event: open-bingo\n`);
-            client.response.write(`data: "bingo opened"\n\n`)
+            client.response.write(`data: bingo opened\n\n`)
         }
     )
 }
@@ -93,7 +105,7 @@ router.post('/open', function(req, res) {
 function sendCloseEventToAll() {
     clients.forEach(client => {
             client.response.write(`event: close-bingo\n`);
-            client.response.write(`data: "bingo closed"\n\n`)
+            client.response.write(`data: bingo closed\n\n`)
         }
     )
 }
