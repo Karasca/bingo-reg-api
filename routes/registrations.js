@@ -68,6 +68,7 @@ router.post('/', function (req, res) {
     }
 });
 
+// send every connected client the clear event
 function sendClearEventToAll() {
     clients.forEach(client => {
             client.response.write(`event: clear\n`);
