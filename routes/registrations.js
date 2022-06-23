@@ -50,12 +50,18 @@ router.get('/', function(req, res) {
 
 // save registration and send to all connections
 router.post('/', function (req, res) {
-    if(req.body.access_token == process.env.ACCESS_TOKEN){
-        const newReg = req.body
-        newReg.access_token = undefined
-        registrations.push(newReg);
-        res.json(registrations)
-        return sendEventsToAll(registrations);
+    if(req.body.access_token === process.env.ACCESS_TOKEN){
+        console.log(req.body.username)
+        if(!registrations.find(e => e.username === req.body.username)){
+            console.log("yo")
+            const newReg = req.body
+            newReg.access_token = undefined
+            registrations.push(newReg);
+            res.json(registrations)
+            return sendEventsToAll(registrations);
+        }else{
+            res.status(400).send("username already registered")
+        }
     }
     else{
         res.status(403).send;
@@ -71,7 +77,7 @@ function sendClearEventToAll() {
 }
 
 router.post('/clear', function(req, res) {
-    if(req.body.access_token == process.env.ACCESS_TOKEN){
+    if(req.body.access_token === process.env.ACCESS_TOKEN){
         registrations = []
         res.status(200).send("Registrations cleared")
         return sendClearEventToAll();
@@ -91,7 +97,7 @@ function sendOpenEventToAll() {
 }
 
 router.post('/open', function(req, res) {
-    if(req.body.access_token == process.env.ACCESS_TOKEN){
+    if(req.body.access_token === process.env.ACCESS_TOKEN){
         open = true;
         res.status(200).send("Opened registrations")
         return sendOpenEventToAll();
@@ -111,7 +117,7 @@ function sendCloseEventToAll() {
 }
 
 router.post('/close', function(req, res) {
-    if(req.body.access_token == process.env.ACCESS_TOKEN){
+    if(req.body.access_token === process.env.ACCESS_TOKEN){
         open = false;
         res.status(200).send("Closed registrations")
         return sendCloseEventToAll();
