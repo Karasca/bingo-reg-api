@@ -77,6 +77,7 @@ function sendClearEventToAll() {
     )
 }
 
+//clear post
 router.post('/clear', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
         registrations = []
