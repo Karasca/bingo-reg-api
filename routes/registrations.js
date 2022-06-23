@@ -90,6 +90,7 @@ router.post('/clear', function(req, res) {
 
 });
 
+//sends open event to all
 function sendOpenEventToAll() {
     clients.forEach(client => {
             client.response.write(`event: open-bingo\n`);
