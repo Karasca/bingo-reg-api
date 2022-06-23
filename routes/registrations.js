@@ -5,7 +5,7 @@ let registrations = [];
 let clients = [];
 let open = false;
 
-
+// The event stream endpoint
 router.get('/', function(req, res) {
     const headers= {
         'Cache-Control': 'no-cache',
