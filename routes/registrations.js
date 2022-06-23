@@ -99,6 +99,7 @@ function sendOpenEventToAll() {
     )
 }
 
+//open registration POST
 router.post('/open', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
         open = true;
