@@ -112,6 +112,7 @@ router.post('/open', function(req, res) {
 
 });
 
+//send close event to all connected clients
 function sendCloseEventToAll() {
     clients.forEach(client => {
             client.response.write(`event: close-bingo\n`);
