@@ -101,10 +101,10 @@ function findReg(streamer) {
 //clear post
 router.post('/clear', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
-        let reg = findReg(process.body.stream)
+        let reg = findReg(req.body.stream)
         reg.seeds = []
         res.status(200).send("Registrations cleared")
-        return sendClearEventToAll(process.body.stream);
+        return sendClearEventToAll(req.body.stream);
     }
     else{
         res.status(403).send("Bad access token");
