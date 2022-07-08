@@ -62,7 +62,7 @@ router.post('/', function (req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
         console.log(req.body.username)
 
-        let streamerReg = findReg(req.body.streamer)
+        let streamerReg = findReg(req.body.stream)
 
         if(!streamerReg.seeds.find(e => e.username === req.body.username)){
             const newReg = {
@@ -73,7 +73,7 @@ router.post('/', function (req, res) {
             streamerReg.seeds.push(newReg);
 
             res.json(streamerReg.seeds)
-            return sendEventsToAll(req.body.streamer,  streamerReg.seeds);
+            return sendEventsToAll(req.body.stream,  streamerReg.seeds);
         }else{
             res.status(400).send("username already registered")
         }
@@ -101,10 +101,10 @@ function findReg(streamer) {
 //clear post
 router.post('/clear', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
-        let reg = findReg(process.body.streamer)
+        let reg = findReg(process.body.stream)
         reg.seeds = []
         res.status(200).send("Registrations cleared")
-        return sendClearEventToAll(process.body.streamer);
+        return sendClearEventToAll(process.body.stream);
     }
     else{
         res.status(403).send("Bad access token");
@@ -126,11 +126,11 @@ function sendOpenEventToAll(streamer) {
 router.post('/open', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
 
-        let reg = findReg(req.body.streamer)
+        let reg = findReg(req.body.stream)
         reg.open = true
 
         res.status(200).send("Opened registrations")
-        return sendOpenEventToAll(req.body.streamer);
+        return sendOpenEventToAll(req.body.stream);
     }
     else{
         res.status(403).send("Bad access token");
@@ -151,11 +151,11 @@ function sendCloseEventToAll(streamer) {
 
 router.post('/close', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
-        let reg = findReg(req.body.streamer)
+        let reg = findReg(req.body.stream)
         reg.open = false
 
         res.status(200).send("Closed registrations")
-        return sendCloseEventToAll(req.body.streamer);
+        return sendCloseEventToAll(req.body.stream);
     }
     else{
         res.status(403).send("Bad access token");
