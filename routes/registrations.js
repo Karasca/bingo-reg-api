@@ -1,147 +1,180 @@
 const express = require('express');
 const router = express.Router();
 
-let registrations = [];
+let registrations = [
+    {stream: "naro", open: false, seeds: []},
+    {stream: "karasca", open: false, seeds: []}
+];
+
 let clients = [];
-let open = false;
 
 // The event stream endpoint
 router.get('/', function(req, res) {
-    const headers= {
-        'Cache-Control': 'no-cache',
-        'Content-Type': 'text/event-stream',
-        'Connection': 'keep-alive'
-    };
+    let streamer = req.query.stream
+    if(streamer !== undefined || null){
+        const headers= {
+            'Cache-Control': 'no-cache',
+            'Content-Type': 'text/event-stream',
+            'Connection': 'keep-alive'
+        }
 
-    res.writeHead(200, headers);
+        res.writeHead(200, headers);
 
-    // write whole registration array to listener
-    res.write(`event: message\n`);
-    res.write(`data: ${JSON.stringify(registrations)}\n\n`);
+        // get registration array for streamer
+        let reg = findReg(streamer)
 
-    // write bingo status to listener
-    if(open){
-        res.write(`event: open-bingo\n`)
-        res.write(`data: bingo opened\n\n`)
+        // write whole registration array to listener
+        res.write(`event: message\n`);
+        res.write(`data: ${JSON.stringify(reg.seeds)}\n\n`);
+
+        // write bingo status to listener
+        if(reg.open){
+            res.write(`event: open-bingo\n`)
+            res.write(`data: bingo opened\n\n`)
+        }else{
+            res.write(`event: close-bingo\n`)
+            res.write(`data: bingo closed\n\n`)
+        }
+
+        const clientId = Date.now();
+
+        const newClient = {
+            id: clientId,
+            response: res,
+            stream: streamer
+        }
+
+        console.log(newClient.stream)
+
+        clients.push(newClient);
+
+        req.on('close', () => {
+            console.log(`${clientId} Connection closed`);
+            clients = clients.filter(client => client.id !== clientId);
+        });
     }else{
-        res.write(`event: close-bingo\n`)
-        res.write(`data: bingo closed\n\n`)
+        res.status(400).send("no streamer provided in query: 'stream'")
     }
-    //console.log(data);
-
-    // res.write(data)
-
-    const clientId = Date.now();
-
-    const newClient = {
-        id: clientId,
-        response: res
-    };
-
-    console.log(newClient.id)
-
-    clients.push(newClient);
-
-    req.on('close', () => {
-        console.log(`${clientId} Connection closed`);
-        clients = clients.filter(client => client.id !== clientId);
-    });
 });
 
 // save registration and send to all connections
 router.post('/', function (req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
         console.log(req.body.username)
-        if(!registrations.find(e => e.username === req.body.username)){
-            console.log("yo")
-            const newReg = req.body
-            newReg.access_token = undefined
-            registrations.push(newReg);
-            res.json(registrations)
-            return sendEventsToAll(registrations);
+
+        let streamerReg = findReg(req.body.streamer)
+
+        if(!streamerReg.seeds.find(e => e.username === req.body.username)){
+            const newReg = {
+                username: req.body.username,
+                seed: req.body.seed,
+            }
+
+            streamerReg.seeds.push(newReg);
+
+            res.json(streamerReg.seeds)
+            return sendEventsToAll(req.body.streamer,  streamerReg.seeds);
         }else{
             res.status(400).send("username already registered")
         }
     }
     else{
-        res.status(403).send;
+        res.status(403).send("Bad access token");
     }
 });
 
 // send every connected client the clear event
-function sendClearEventToAll() {
+function sendClearEventToAll(streamer) {
     clients.forEach(client => {
+        if(client.stream === streamer) {
             client.response.write(`event: clear\n`);
             client.response.write(`data: registrations cleared\n\n`)
         }
-    )
+    })
+}
+
+// Finds the record relating to the streamer
+function findReg(streamer) {
+    return registrations.find(r => streamer.toLowerCase() === r.stream);
 }
 
 //clear post
 router.post('/clear', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
-        registrations = []
+        let reg = findReg(process.body.streamer)
+        reg.seeds = []
         res.status(200).send("Registrations cleared")
-        return sendClearEventToAll();
+        return sendClearEventToAll(process.body.streamer);
     }
     else{
-        res.status(403).send;
+        res.status(403).send("Bad access token");
     }
 
 });
 
 //sends open event to all
-function sendOpenEventToAll() {
+function sendOpenEventToAll(streamer) {
     clients.forEach(client => {
+        if(client.stream === streamer) {
             client.response.write(`event: open-bingo\n`);
             client.response.write(`data: bingo opened\n\n`)
         }
-    )
+    })
 }
 
 //open registration POST
 router.post('/open', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
-        open = true;
+
+        let reg = findReg(req.body.streamer)
+        reg.open = true
+
         res.status(200).send("Opened registrations")
-        return sendOpenEventToAll();
+        return sendOpenEventToAll(req.body.streamer);
     }
     else{
-        res.status(403).send;
+        res.status(403).send("Bad access token");
     }
 
 });
 
 //send close event to all connected clients
-function sendCloseEventToAll() {
+function sendCloseEventToAll(streamer) {
     clients.forEach(client => {
-            client.response.write(`event: close-bingo\n`);
-            client.response.write(`data: bingo closed\n\n`)
+            if(client.stream === streamer){
+                client.response.write(`event: close-bingo\n`);
+                client.response.write(`data: bingo closed\n\n`)
+            }
         }
     )
 }
 
 router.post('/close', function(req, res) {
     if(req.body.access_token === process.env.ACCESS_TOKEN){
-        open = false;
+        let reg = findReg(req.body.streamer)
+        reg.open = false
+
         res.status(200).send("Closed registrations")
-        return sendCloseEventToAll();
+        return sendCloseEventToAll(req.body.streamer);
     }
     else{
-        res.status(403).send;
+        res.status(403).send("Bad access token");
     }
 
 });
 
 router.get('/status', (request, response) => response.json({clients: clients.length}));
 
-function sendEventsToAll(newReg) {
-    clients.forEach(client => {
-        client.response.write(`event: message\n`);
-        client.response.write(`data: ${JSON.stringify(newReg)}\n\n`)
-    }
+function sendEventsToAll(streamer, seeds) {
+        clients.forEach(client => {
+            // send to clients only if related to streamer
+            if(client.stream === streamer) {
+                client.response.write(`event: message\n`);
+                console.log(`${streamer} ${JSON.stringify(seeds)}`)
+                client.response.write(`data: ${JSON.stringify(seeds)}\n\n`)
+            }
+        }
     )
 }
-
 
 module.exports = router;
